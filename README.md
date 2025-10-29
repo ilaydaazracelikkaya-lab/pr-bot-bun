@@ -1,0 +1,2 @@
+# pr-bot-bun
+optional
