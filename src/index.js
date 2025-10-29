@@ -51,7 +51,8 @@ It changed ${pr.changed_files} files, added ${pr.additions} lines, and deleted $
 
         const summary = data?.[0]?.generated_text || "AI could not generate description.";
 
-        const update = await fetch(pr.url, {
+        const update = await fetch(pr.issue_url, {
+
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
