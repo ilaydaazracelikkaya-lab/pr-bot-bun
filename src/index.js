@@ -9,9 +9,16 @@ app.use(express.json({ limit: "1mb" }));
 const HF_API = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct";
 const HF_KEY = process.env.HUGGINGFACE_API_KEY;
 
+// 🔹 Webhook endpoint
 app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("📩 GITHUB EVENT:", event);
+
+  // ✅ Ping event’i yakalayıp bağlantıyı doğrula
+  if (event === "ping") {
+    console.log("✅ Webhook connection verified!");
+    return res.status(200).send("pong");
+  }
 
   if (event === "pull_request") {
     const action = req.body.action;
@@ -32,7 +39,7 @@ It changed ${pr.changed_files} files, added ${pr.additions} lines, and deleted $
           body: JSON.stringify({ inputs: prompt }),
         });
 
-        // Hugging Face bazen text yerine JSON dışı döner, güvenli parse:
+        // Hugging Face bazen JSON dışında döner, o yüzden güvenli parse:
         const text = await response.text();
         let data;
         try {
