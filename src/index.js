@@ -6,7 +6,9 @@ const app = express();
 app.use(express.json({ limit: "1mb" }));
 
 // Yeni ve daha sağlam model
-const HF_API = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct";
+const HF_API = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3";
+
+
 const HF_KEY = process.env.HUGGINGFACE_API_KEY;
 
 // 🔹 Webhook endpoint
