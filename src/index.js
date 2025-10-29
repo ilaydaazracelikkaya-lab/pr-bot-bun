@@ -1,17 +1,21 @@
 import express from "express";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
+import OpenAI from "openai";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-// ✅ Test endpoint
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 app.get("/webhook", (req, res) => {
   res.send("✅ Webhook endpoint is active! Waiting for POST requests from GitHub.");
 });
 
-// 📦 Webhook endpoint
 app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("📩 GITHUB EVENT:", event);
@@ -23,29 +27,37 @@ app.post("/webhook", async (req, res) => {
     const pr = req.body.pull_request;
     const repo = req.body.repository.full_name;
 
-    console.log(`🧩 Pull Request ${action}: "${pr.title}"`);
-
     if (action === "opened" || action === "synchronize") {
-      const summary = `
-📝 PR Description:
-This PR includes changes to the "${repo}" repository titled "${pr.title}".
-A total of ${pr.changed_files} files were modified,
-with ${pr.additions} lines added and ${pr.deletions} lines deleted.
-`;
+      const diffInfo = `
+        Repo: ${repo}
+        PR Title: ${pr.title}
+        Changed Files: ${pr.changed_files}
+        Additions: ${pr.additions}
+        Deletions: ${pr.deletions}
+      `;
 
-      try {
-        const response = await fetch(pr.url, {
-          method: "PATCH",
-          headers: {
-            "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
-            "Accept": "application/vnd.github+json",
-          },
-          body: JSON.stringify({ body: summary }),
-        });
-        console.log("📦 PR description updated:", response.status);
-      } catch (err) {
-        console.error("❌ Error updating PR description:", err);
-      }
+      console.log("🧠 Generating AI-based PR description...");
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that writes professional GitHub PR descriptions." },
+          { role: "user", content: `Generate a concise pull request description for the following details:\n${diffInfo}` },
+        ],
+      });
+
+      const aiDescription = completion.choices[0].message.content;
+
+      const response = await fetch(pr.url, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
+          "Accept": "application/vnd.github+json",
+        },
+        body: JSON.stringify({ body: aiDescription }),
+      });
+
+      console.log("✨ PR description updated via AI:", response.status);
     }
   }
 
