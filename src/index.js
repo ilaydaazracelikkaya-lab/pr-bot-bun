@@ -5,56 +5,61 @@ dotenv.config();
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-// Yeni ve daha sağlam model
-const HF_API = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3";
-
-
-const HF_KEY = process.env.HUGGINGFACE_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
 // 🔹 Webhook endpoint
 app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("📩 GITHUB EVENT:", event);
 
-  // ✅ Ping event’i yakalayıp bağlantıyı doğrula
+  // GitHub’a anında yanıt dönelim (timeout olmasın)
+  res.status(200).send("✅ Received!");
+
   if (event === "ping") {
     console.log("✅ Webhook connection verified!");
-    return res.status(200).send("pong");
+    return;
   }
 
   if (event === "pull_request") {
     const action = req.body.action;
+    console.log("Pull request action:", action);
+
     const pr = req.body.pull_request;
     const repo = req.body.repository.full_name;
 
-    if (action === "opened" || action === "synchronize") {
-      const prompt = `Write a short English description for a pull request titled "${pr.title}" in the repository "${repo}". 
-It changed ${pr.changed_files} files, added ${pr.additions} lines, and deleted ${pr.deletions} lines.`;
+    // 🔸 Eğer açıklama zaten AI tarafından güncellendiyse, tekrar işlem yapma
+    if (pr.body && pr.body.includes("<!-- AI updated -->")) {
+      console.log("⚙️ Already updated by AI — skipping...");
+      return;
+    }
+
+    if (["opened", "synchronize", "edited", "ready_for_review"].includes(action)) {
+      const prompt = `
+      Write a short, clear, and professional English description for a GitHub Pull Request titled "${pr.title}" 
+      in the repository "${repo}". Mention what it changes or improves in 1–2 sentences.
+      `;
 
       try {
-        const response = await fetch(HF_API, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${HF_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ inputs: prompt }),
-        });
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          }
+        );
 
-        // Hugging Face bazen JSON dışında döner, o yüzden güvenli parse:
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          console.log("⚠️ Non-JSON response, raw text:", text.slice(0, 200));
-          data = [{ generated_text: text }];
-        }
+        const data = await response.json();
+        const summary =
+          (data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "AI could not generate a description.") +
+          "\n\n<!-- AI updated -->"; // 🔥 gizli etiket eklendi
 
-        const summary = data?.[0]?.generated_text || "AI could not generate description.";
+        console.log("✅ AI-generated PR description:\n", summary);
 
         const update = await fetch(pr.issue_url, {
-
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
@@ -65,12 +70,10 @@ It changed ${pr.changed_files} files, added ${pr.additions} lines, and deleted $
 
         console.log(`✨ PR açıklaması güncellendi! [${update.status}]`);
       } catch (err) {
-        console.error("❌ Hugging Face isteği başarısız:", err);
+        console.error("❌ Gemini isteği başarısız:", err);
       }
     }
   }
-
-  res.status(200).send("ok");
 });
 
 const PORT = process.env.PORT || 3000;
