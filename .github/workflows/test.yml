@@ -22,18 +22,36 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests & generate timestamped report
-        run: bun run test:json
+      - name: Run tests and generate reports
+        run: |
+          mkdir -p test-result
+          bun test --reporter=junit --reporter-outfile test-result/report.xml
+          bun run test:json || true
+          echo "All tests executed. Reports stored in test-result/"
 
-      - name:  Create reports directory (in case missing)
+      - name: Create reports directory (in case missing)
         run: mkdir -p reports
 
-      - name:  Upload all test reports (JSON + XML)
+      - name: Move reports into reports directory
+        run: |
+          cp -r test-result/*.xml reports/ || true
+          cp -r *.json reports/ || true
+
+      - name: Upload all test reports (JSON + XML)
         uses: actions/upload-artifact@v4
         with:
           name: bun-test-reports
           path: |
-            *.json
-            *.xml
+            test-result/**/*.xml
             reports/**/*.json
             reports/**/*.xml
+          retention-days: 7
+
+      # ---- Summary section ----
+      - name: Print summary
+        if: success()
+        run: echo "All tests passed successfully."
+
+      - name: Print summary (on failure)
+        if: failure()
+        run: echo "Some tests failed. Check the logs and artifacts above for details."
