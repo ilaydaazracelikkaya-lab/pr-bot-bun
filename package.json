@@ -1,7 +1,17 @@
 {
+  "type": "module",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  },
+  "scripts": {
+    "start": "bun run src/index.js",
+    "test": "bun test",
+     "test:json": "bun run scripts/run-tests.js"
   }
 }

@@ -7,16 +7,14 @@ app.use(express.json({ limit: "1mb" }));
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
-// 🔹 Webhook endpoint
 app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
-  console.log("📩 GITHUB EVENT:", event);
+  console.log("GITHUB EVENT:", event);
 
-  // GitHub’a anında yanıt dönelim (timeout olmasın)
-  res.status(200).send("✅ Received!");
+  res.status(200).send("Received!");
 
   if (event === "ping") {
-    console.log("✅ Webhook connection verified!");
+    console.log("Webhook connection verified!");
     return;
   }
 
@@ -27,9 +25,8 @@ app.post("/webhook", async (req, res) => {
     const pr = req.body.pull_request;
     const repo = req.body.repository.full_name;
 
-    // 🔸 Eğer açıklama zaten AI tarafından güncellendiyse, tekrar işlem yapma
     if (pr.body && pr.body.includes("<!-- AI updated -->")) {
-      console.log("⚙️ Already updated by AI — skipping...");
+      console.log("Already updated by AI — skipping...");
       return;
     }
 
@@ -54,27 +51,32 @@ app.post("/webhook", async (req, res) => {
         const data = await response.json();
         const summary =
           (data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "AI could not generate a description.") +
-          "\n\n<!-- AI updated -->"; // 🔥 gizli etiket eklendi
+            "AI could not generate a description.") + "\n\n<!-- AI updated -->";
 
-        console.log("✅ AI-generated PR description:\n", summary);
+        console.log("AI-generated PR description:\n", summary);
 
         const update = await fetch(pr.issue_url, {
           method: "PATCH",
           headers: {
-            "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
-            "Accept": "application/vnd.github+json",
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            Accept: "application/vnd.github+json",
           },
           body: JSON.stringify({ body: summary }),
         });
 
-        console.log(`✨ PR açıklaması güncellendi! [${update.status}]`);
+        console.log(`PR description updated! [${update.status}]`);
       } catch (err) {
-        console.error("❌ Gemini isteği başarısız:", err);
+        console.error("The Gemini API request failed:", err);
       }
     }
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+// 💡 Bun ortamında server'ı başlatma
+if (import.meta.main) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+export default app;
