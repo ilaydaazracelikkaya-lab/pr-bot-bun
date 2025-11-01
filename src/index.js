@@ -13,18 +13,13 @@ app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("Incoming webhook:", event);
 
- // test: auto description check
-// deploy test trigger
-
   res.status(200).send("Received!");
 
-  // Ping kontrolü (bağlantı testi)
   if (event === "ping") {
     console.log("Webhook connection verified!");
     return;
   }
 
-  // Pull request olayı
   if (event === "pull_request") {
     if (processing) {
       
@@ -42,13 +37,11 @@ app.post("/webhook", async (req, res) => {
 
       console.log("Pull request action:", action);
 
-      // Zaten AI tarafından güncellenmişse atla
       if (pr.body && pr.body.includes("<!-- AI updated -->")) {
         console.log("Already updated by AI — skipping.");
         return;
       }
 
-      // PR’da kod değişikliği yoksa atla
       if (["synchronize", "edited"].includes(action) && pr.changed_files === 0) {
         console.log("No code changes detected, skipping description update.");
         return;
@@ -81,14 +74,12 @@ app.post("/webhook", async (req, res) => {
               "AI could not generate a description.") +
             "\n\n<!-- AI updated -->";
 
-          // Testin beklediği loglar:
           console.log("AI generated description:", summary);
         } catch (apiError) {
           console.error("Gemini API request failed:", apiError);
           summary =
             "AI service unavailable. Please provide a manual PR description.\n\n<!-- AI updated -->";
 
-          // Test fallback log’u da görsün
           console.log("AI service unavailable:", summary);
         }
 
