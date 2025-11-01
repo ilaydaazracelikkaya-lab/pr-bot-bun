@@ -18,7 +18,7 @@ app.post("/webhook", async (req, res) => {
 
   // Ping kontrolü (bağlantı testi)
   if (event === "ping") {
-    console.log("Webhook connection verified");
+    console.log("Webhook connection verified!");
     return;
   }
 
