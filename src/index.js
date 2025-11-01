@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const app = express();
@@ -9,27 +10,22 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY;
 let processing = false;
 
 app.post("/webhook", async (req, res) => {
-  // 🔍 DEBUG LOGS
-  console.log("📩 Incoming webhook request");
-  console.log("📦 FULL HEADERS:", req.headers);
-  console.log("📦 FULL BODY:", req.body);
-
   const event = req.headers["x-github-event"];
-  console.log("🔍 Extracted event:", event);
+  console.log("Incoming webhook:", event);
 
-  // her durumda hemen yanıt verelim
+  // Her durumda hemen 200 döndür
   res.status(200).send("Received!");
 
-  // 🔹 Ping olayı: bağlantı doğrulama
+  // Ping kontrolü (bağlantı testi)
   if (event === "ping") {
-    console.log("✅ Webhook connection verified!");
+    console.log("Webhook connection verified");
     return;
   }
 
-  // 🔹 Pull request olayı
+  // Pull request olayı
   if (event === "pull_request") {
     if (processing) {
-      console.log("⚠️ Another PR is being processed, skipping concurrent request.");
+      console.log("Another PR is being processed, skipping concurrent request.");
       return;
     }
 
@@ -40,16 +36,17 @@ app.post("/webhook", async (req, res) => {
       const pr = req.body.pull_request;
       const repo = req.body.repository.full_name;
 
-      console.log("🪄 Pull request action:", action);
+      console.log("Pull request action:", action);
 
+      // Zaten AI tarafından güncellenmişse atla
       if (pr.body && pr.body.includes("<!-- AI updated -->")) {
-        console.log("ℹ️ Already updated by AI — skipping...");
+        console.log("Already updated by AI — skipping.");
         return;
       }
 
-      // 🔸 PR değişiklik yoksa
+      // PR’da kod değişikliği yoksa atla
       if (["synchronize", "edited"].includes(action) && pr.changed_files === 0) {
-        console.log("ℹ️ No code changes detected, skipping description update.");
+        console.log("No code changes detected, skipping description update.");
         return;
       }
 
@@ -62,7 +59,6 @@ app.post("/webhook", async (req, res) => {
         let summary;
 
         try {
-          console.log("🤖 Sending request to Gemini API...");
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
             {
@@ -80,12 +76,12 @@ app.post("/webhook", async (req, res) => {
               "AI could not generate a description.") +
             "\n\n<!-- AI updated -->";
         } catch (apiError) {
-          console.error("❌ Gemini API request failed:", apiError);
+          console.error("Gemini API request failed:", apiError);
           summary =
             "AI service unavailable. Please provide a manual PR description.\n\n<!-- AI updated -->";
         }
 
-        console.log("📝 PR description to update:\n", summary);
+        console.log("Updating PR description...");
 
         try {
           const update = await fetch(pr.issue_url, {
@@ -96,9 +92,9 @@ app.post("/webhook", async (req, res) => {
             },
             body: JSON.stringify({ body: summary }),
           });
-          console.log(`✅ PR description updated! [${update.status}]`);
+          console.log(`PR description updated [${update.status}]`);
         } catch (updateError) {
-          console.error("❌ Failed to update PR:", updateError);
+          console.error("Failed to update PR:", updateError);
         }
       }
     } finally {
@@ -109,7 +105,7 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 if (import.meta.main) {
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 export default app;
