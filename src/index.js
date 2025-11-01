@@ -25,6 +25,8 @@ app.post("/webhook", async (req, res) => {
   // Pull request olayı
   if (event === "pull_request") {
     if (processing) {
+      
+      console.log("Concurrent PR check triggered.");
       console.log("Another PR is being processed, skipping concurrent request.");
       return;
     }
