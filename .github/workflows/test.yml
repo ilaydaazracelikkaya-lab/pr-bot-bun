@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -55,3 +60,16 @@ jobs:
       - name: Print summary (on failure)
         if: failure()
         run: echo "Some tests failed. Check the logs and artifacts above for details."
+
+      # ---- Comment test results on PR ----
+      - name: Comment test result on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: bun-tests
+          message: |
+            **Bun Test Results**
+            - Status: ${{ job.status }}
+            - Workflow: [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
