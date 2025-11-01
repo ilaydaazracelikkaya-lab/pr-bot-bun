@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -22,18 +27,76 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests & generate timestamped report
-        run: bun run test:json
+      - name: Run tests and generate reports
+        run: |
+          mkdir -p test-result
+          bun test --reporter=junit --reporter-outfile test-result/report.xml
+          bun run test:json || true
+          echo "All tests executed. Reports stored in test-result/"
 
-      - name:  Create reports directory (in case missing)
+      - name: Create reports directory (in case missing)
         run: mkdir -p reports
 
-      - name:  Upload all test reports (JSON + XML)
+      - name: Move reports into reports directory
+        run: |
+          cp -r test-result/*.xml reports/ || true
+          cp -r *.json reports/ || true
+
+      - name: Upload all test reports (JSON + XML)
         uses: actions/upload-artifact@v4
         with:
           name: bun-test-reports
           path: |
-            *.json
-            *.xml
+            test-result/**/*.xml
             reports/**/*.json
             reports/**/*.xml
+          retention-days: 7
+
+      # ---- Summary section ----
+      - name: Print summary
+        if: success()
+        run: echo "All tests passed successfully."
+
+      - name: Print summary (on failure)
+        if: failure()
+        run: echo "Some tests failed. Check the logs and artifacts above for details."
+
+      # ---- Docker Hub Login (before build/push) ----
+      - name: Login to Docker Hub
+        if: success()
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ---- Build & Push Docker image ----
+      - name: Build Docker image
+        if: success()
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/pr-bot-bun:latest
+          echo "Building image $IMAGE_NAME..."
+          docker build -t $IMAGE_NAME .
+
+      - name: Push Docker image
+        if: success()
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/pr-bot-bun:latest
+          echo "Pushing image $IMAGE_NAME..."
+          docker push $IMAGE_NAME
+
+      - name: Confirm Docker push
+        if: success()
+        run: echo "✅ Docker image pushed successfully to Docker Hub."
+
+      # ---- Comment test result on PR ----
+      - name: Comment test result on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: bun-tests
+          message: |
+            **Bun Test Results**
+            - Status: ${{ job.status }}
+            - Workflow: [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="9" assertions="19" failures="4" skipped="0" time="0.5664552">
+  <testsuite name="tests\webhook.integration.test.js" file="tests\webhook.integration.test.js" tests="6" assertions="14" failures="2" skipped="0" time="0.078" hostname="">
+    <testcase name="Responds 200 and &apos;Received!&apos; for ping event" classname="" time="0.047" file="tests\webhook.integration.test.js" line="13" assertions="3" />
+    <testcase name="Skips when AI tag is present" classname="" time="0" file="tests\webhook.integration.test.js" line="23" assertions="1" />
+    <testcase name="Handles non-PR events" classname="" time="0.015" file="tests\webhook.integration.test.js" line="35" assertions="3" />
+    <testcase name="Uses fallback when Gemini API fails" classname="" time="0" file="tests\webhook.integration.test.js" line="47" assertions="2">
+      <failure type="AssertionError" />
+    </testcase>
+    <testcase name="Skips when another PR is being processed" classname="" time="0.016" file="tests\webhook.integration.test.js" line="69" assertions="3">
+      <failure type="AssertionError" />
+    </testcase>
+    <testcase name="Skips update if no changed files" classname="" time="0" file="tests\webhook.integration.test.js" line="91" assertions="2" />
+  </testsuite>
+  <testsuite name="tests\webhook.unit.test.js" file="tests\webhook.unit.test.js" tests="3" assertions="5" failures="2" skipped="0" time="0.016" hostname="">
+    <testcase name="Generates AI summary when pull_request opened" classname="" time="0.016" file="tests\webhook.unit.test.js" line="42" assertions="3">
+      <failure type="AssertionError" />
+    </testcase>
+    <testcase name="Skips other PR actions" classname="" time="0" file="tests\webhook.unit.test.js" line="58" assertions="1" />
+    <testcase name="Handles Gemini API error gracefully" classname="" time="0" file="tests\webhook.unit.test.js" line="70" assertions="1">
+      <failure type="AssertionError" />
+    </testcase>
+  </testsuite>
+</testsuites>

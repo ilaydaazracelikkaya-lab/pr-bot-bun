@@ -2,22 +2,22 @@
   "testsuites": {
     "$": {
       "name": "bun test",
-      "tests": "6",
-      "assertions": "13",
-      "failures": "0",
+      "tests": "9",
+      "assertions": "19",
+      "failures": "4",
       "skipped": "0",
-      "time": "0.2610253"
+      "time": "0.5664552"
     },
     "testsuite": [
       {
         "$": {
           "name": "tests\\webhook.integration.test.js",
           "file": "tests\\webhook.integration.test.js",
-          "tests": "3",
-          "assertions": "7",
-          "failures": "0",
+          "tests": "6",
+          "assertions": "14",
+          "failures": "2",
           "skipped": "0",
-          "time": "0.047",
+          "time": "0.078",
           "hostname": ""
         },
         "testcase": [
@@ -45,10 +45,50 @@
             "$": {
               "name": "Handles non-PR events",
               "classname": "",
-              "time": "0",
+              "time": "0.015",
               "file": "tests\\webhook.integration.test.js",
               "line": "35",
               "assertions": "3"
+            }
+          },
+          {
+            "$": {
+              "name": "Uses fallback when Gemini API fails",
+              "classname": "",
+              "time": "0",
+              "file": "tests\\webhook.integration.test.js",
+              "line": "47",
+              "assertions": "2"
+            },
+            "failure": {
+              "$": {
+                "type": "AssertionError"
+              }
+            }
+          },
+          {
+            "$": {
+              "name": "Skips when another PR is being processed",
+              "classname": "",
+              "time": "0.016",
+              "file": "tests\\webhook.integration.test.js",
+              "line": "69",
+              "assertions": "3"
+            },
+            "failure": {
+              "$": {
+                "type": "AssertionError"
+              }
+            }
+          },
+          {
+            "$": {
+              "name": "Skips update if no changed files",
+              "classname": "",
+              "time": "0",
+              "file": "tests\\webhook.integration.test.js",
+              "line": "91",
+              "assertions": "2"
             }
           }
         ]
@@ -58,10 +98,10 @@
           "name": "tests\\webhook.unit.test.js",
           "file": "tests\\webhook.unit.test.js",
           "tests": "3",
-          "assertions": "6",
-          "failures": "0",
+          "assertions": "5",
+          "failures": "2",
           "skipped": "0",
-          "time": "0.015",
+          "time": "0.016",
           "hostname": ""
         },
         "testcase": [
@@ -69,10 +109,15 @@
             "$": {
               "name": "Generates AI summary when pull_request opened",
               "classname": "",
-              "time": "0.015",
+              "time": "0.016",
               "file": "tests\\webhook.unit.test.js",
               "line": "42",
-              "assertions": "4"
+              "assertions": "3"
+            },
+            "failure": {
+              "$": {
+                "type": "AssertionError"
+              }
             }
           },
           {
@@ -93,6 +138,11 @@
               "file": "tests\\webhook.unit.test.js",
               "line": "70",
               "assertions": "1"
+            },
+            "failure": {
+              "$": {
+                "type": "AssertionError"
+              }
             }
           }
         ]
