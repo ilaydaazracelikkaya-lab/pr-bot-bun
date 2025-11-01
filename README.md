@@ -3,15 +3,17 @@
  Genel Tanım
 
 Bu proje, Deeployed Peer Case Study kapsamında, GitHub üzerinden açılan Pull Request (PR) olaylarını dinleyip, değişiklikleri analiz ederek yapay zekâ destekli PR açıklamaları (description) üreten bir backend servistir.
-Amaç, otomatik PR açıklaması oluşturma sürecini uçtan uca modelleyerek; webhook entegrasyonu, API kullanımı, test ortamı, kod organizasyonu ve deployment konularında yetkinlik göstermektir.
+Amaç, otomatik PR açıklaması üretim sürecini uçtan uca modelleyip; webhook entegrasyonu, yapay zekâ kullanımı, test geliştirme, kod organizasyonu ve deploy süreci gibi alanlardaki teknik yeterliliği göstermektir.
 
 Teknolojiler ve Mimarî
 Katman	Teknoloji	Açıklama
-Backend	Bun.js + Express.js	Hafif, hızlı ve modüler backend mimarisi için tercih edildi.
-Yapay Zekâ Servisi	Gemini API (Google AI Studio)	Açıklama üretimi için kullanıldı. 
-Gerekçe: Gemini, diff benzeri uzun metinlerde bağlamı koruyarak daha doğal açıklamalar üretmekte başarılıdır.
-Webhook Routing	Ngrok Tunnel	Lokal geliştirme ortamında GitHub webhook’larının test edilebilmesi için kullanıldı. Kalıcı ve güvenli bir routing çözümü sağladı.
-Test Ortamı	bun:test + Supertest	Hem birim hem entegrasyon testlerinde, HTTP endpoint’lerinin gerçekçi şekilde doğrulanması için tercih edildi. 
+Backend:	Bun.js + Express.js	Yüksek performanslı, minimal ve modern bir backend mimarisi sağlamak için tercih edildi.
+Yapay Zekâ Servisi:	Gemini API (Google AI Studio)	PR içeriğini anlamlı özetlere dönüştürmede başarılı olduğu ve doğal dil üretiminde tutarlılık sağladığı için seçildi.
+Webhook Routing:	Ngrok	Lokal geliştirme sürecinde GitHub webhook isteklerini güvenli şekilde yönlendirmek için kullanıldı.
+Kapsülleme:	Docker	Proje tüm bağımlılıklarıyla birlikte kapsüllenerek kolay deploy ve taşınabilirlik sağlandı.
+Test Ortamı:	bun:test + Supertest	API endpoint’lerini gerçekçi senaryolarla doğrulamak için kullanıldı.
+Deployment:	Dockerized Production Environment	Proje, Docker imajı olarak paketlenip production-ready biçimde deploy edildi.
+
 
 Fonksiyonel Özellikler
 /webhook endpoint’i, GitHub App tarafından tetiklenen pull_request.opened olaylarını dinler.
@@ -61,6 +63,21 @@ bun test
 
 ngrok http 3000
 ve GitHub App webhook URL’ini https://<ngrok-url>/webhook olarak ayarlayın.
+
+#Docker Kullanımı ve Deploy
+
+Proje, Docker üzerinden kolayca çalıştırılabilir ve dağıtılabilir hale getirilmiştir.
+
+Docker image oluşturma:
+docker build -t pr-bot-server .
+
+Container’ı çalıştırma:
+docker run -d -p 3000:3000 pr-bot-server
+
+Deploy:
+
+Docker image, production ortamına taşınarak webhook bağlantısı aktif hale getirilmiştir.
+Bu sayede CI/CD dostu, izole, ölçeklenebilir bir servis elde edilmiştir.
 
 Gemini API, PR içeriğini (diff, başlık, commit özetleri) analiz ederek geliştirici dostu açıklamalar üretir.
 Model, sadece “ne değiştiğini” değil “neden değiştiğini” öne çıkaran kısa özetler üretmek üzere prompt edilmiştir:
