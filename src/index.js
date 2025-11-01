@@ -13,7 +13,7 @@ app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("Incoming webhook:", event);
 
-  // Her durumda hemen 200 döndür
+  // Her durumda hemen yanıt ver
   res.status(200).send("Received!");
 
   // Ping kontrolü (bağlantı testi)
@@ -59,6 +59,7 @@ app.post("/webhook", async (req, res) => {
         let summary;
 
         try {
+          console.log("Sending request to Gemini API...");
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
             {
@@ -75,10 +76,16 @@ app.post("/webhook", async (req, res) => {
             (data?.candidates?.[0]?.content?.parts?.[0]?.text ||
               "AI could not generate a description.") +
             "\n\n<!-- AI updated -->";
+
+          // Testin beklediği loglar:
+          console.log("AI generated description:", summary);
         } catch (apiError) {
           console.error("Gemini API request failed:", apiError);
           summary =
             "AI service unavailable. Please provide a manual PR description.\n\n<!-- AI updated -->";
+
+          // Test fallback log’u da görsün
+          console.log("AI service unavailable:", summary);
         }
 
         console.log("Updating PR description...");
