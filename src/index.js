@@ -13,7 +13,8 @@ app.post("/webhook", async (req, res) => {
   const event = req.headers["x-github-event"];
   console.log("Incoming webhook:", event);
 
-  // Her durumda hemen yanıt ver
+ // test: auto description check
+
   res.status(200).send("Received!");
 
   // Ping kontrolü (bağlantı testi)
